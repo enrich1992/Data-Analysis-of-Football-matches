@@ -1,0 +1,7 @@
+def game_loss_outcome(home_score, away_score, home_team, away_team):
+    if (home_score < away_score): 
+         loser_outcome = home_team
+    elif (home_score > away_score): 
+         loser_outcome = away_team
+    else: loser_outcome = "Draw"
+    return(loser_outcome)
