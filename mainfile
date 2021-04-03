@@ -1,0 +1,208 @@
+!pip install opendatasets
+import opendatasets as od
+import pandas as pd
+od.download('https://www.kaggle.com/martj42/international-football-results-from-1872-to-2017')
+import os
+os.listdir('international-football-results-from-1872-to-2017')
+footy_df=pd.read_csv('international-football-results-from-1872-to-2017/results.csv')
+a=footy_df.home_team.unique()
+b=footy_df.away_team.unique()
+aa=set(a)
+footballing_countries=list(aa.intersection(b))
+print(footballing_countries)
+footy_df['winner_outcome']=footy_df.apply(lambda x:game_win_outcome(x['home_score'],x['away_score'],x['home_team'],x['away_team']),axis=1)
+footy_df['loser_outcome']=footy_df.apply(lambda x:game_loss_outcome(x['home_score'],x['away_score'],x['home_team'],x['away_team']),axis=1)
+#we extract the year , month and day of the week using the Datetime Indexing available in PANDAS
+footy_df['date']=pd.to_datetime(footy_df.date)
+footy_df['year'] = pd.DatetimeIndex(footy_df.date).year
+footy_df['month'] = pd.DatetimeIndex(footy_df.date).month
+footy_df['day'] = pd.DatetimeIndex(footy_df.date).day
+footy_df.tail() #preview the new columns containing the year, month and day information
+import seaborn as sns
+import matplotlib
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+#we preset some properties of the plots 
+sns.set_style('darkgrid')
+matplotlib.rcParams['font.size'] = 14
+matplotlib.rcParams['figure.figsize'] = (9, 5)
+matplotlib.rcParams['figure.facecolor'] = '#00000000'
+
+
+n=20; 
+top20home=footy_df['home_team'].value_counts()[:n] #this stores the highest 20 elements(teams) from the home team with the key being the name and the value being the count
+countoftop20hometeam=top20home.values # we store the values as  count
+top20hometeams=footy_df['home_team'].value_counts()[:n].index.tolist() # we store the corresponding keys (team names) in a list
+print('The top 20 countries who have played the most home games are \n', top20hometeams)
+
+print('The ammount of home matches they have played respectively are \n ', countoftop20hometeam)
+
+plt.figure(figsize=(28,14))
+plt.title('Plot 1 : Most Games played by countries as Home team')
+plt.xlabel('Countries')
+plt.ylabel('Number of games played')
+g=sns.barplot(top20hometeams,countoftop20hometeam)
+
+
+top20away=footy_df['away_team'].value_counts()[:n]
+countoftop20awayteam=top20away.values
+top20awayteams=footy_df['away_team'].value_counts()[:n].index.tolist()
+print('The top 20 countries who have played the most away games are \n', top20awayteams)
+print('The ammount of away matches they have played respectively are \n ', countoftop20awayteam)
+
+plt.figure(figsize=(10,14))
+plt.title('Plot 2 : Most Games played by countries as Away team')
+plt.ylabel('Name of Countries')
+plt.xlabel('Number of games played')
+sns.barplot(countoftop20awayteam,top20awayteams)
+
+from collections import Counter
+#Counter is a dict subclass for counting hashable objects
+
+temp1=footy_df['home_team'].tolist() #we convert our dataframe object into a list
+temp2=footy_df['away_team'].tolist()
+teamlist=temp1 + temp2
+
+count_totalmatches_team=Counter(teamlist)
+#print(count_totalmatches_team) uncomment this if you want to see the count of matches each and every country has played
+
+sorted_count=sorted(count_totalmatches_team.items(),key=lambda x: x[1],reverse=True) #creating a sorted list of the count of matches for each country
+count=len(count_totalmatches_team)
+
+most_played_ten=sorted_count[1:10]
+print('The ten countries/teams with the most played matches are \n',most_played_ten)
+
+least_played_ten=sorted_count[count-10:]
+print('The ten countries/teams with the least played matches are \n',least_played_ten)
+
+# Creating a dataframe which contains the average homescore and awayscore in that particular year
+footy_yearwise_goals_df = footy_df.groupby('year')[['home_score', 'away_score']].mean()
+#Rounding up values as goals scored in a match are not normally fractional values
+yearwise_goals=footy_yearwise_goals_df.round() 
+x=int(input("Enter the start year (should be a number between 1872-2020) :")) 
+y=int(input('Enter the last year (should be a number greater than start year and in range 1872-2020) :')) 
+df=yearwise_goals.iloc[(x-1872):(y+1-1872)]
+print('The average goals scored by the home team and away team from' ,x ,'to' , y, 'are as follows :') 
+print(df)
+
+df.plot(y=['home_score','away_score'],kind='bar',ylabel='Number of Goals', title='Plot 3: Average goals scored by home team and away team in given range of years')
+
+footy_df['team_win_outcome']=footy_df.apply(lambda x:team_win_outcome(x['home_score'],x['away_score']),axis=1)
+footy_df.head()
+
+#taking input from user
+yr=int(input('Enter a particular year '))
+
+#getting the 'team_win_outcome' data of that particular year
+yr_df=footy_df[footy_df.year==yr]
+yr_teamwin_df=yr_df['team_win_outcome']
+yr_teamwin_df.head()
+# keepin track of the count 
+count_home=0; count_away=0; count_draw=0
+for i in range(1,len(yr_teamwin_df)):
+ if yr_teamwin_df.iloc[i]=='H':
+    count_home+=1
+ elif yr_teamwin_df.iloc[i]=='A':
+    count_away+=1
+ else :
+    count_draw+=1
+    
+#calculating the pecentage    
+home_win_percentage=(count_home/len(yr_teamwin_df))*100
+away_win_percentage=(count_away/len(yr_teamwin_df))*100
+draw_percentage=(count_draw/len(yr_teamwin_df))*100
+
+#displaying output
+print('The win percentage of home teams in the year', yr,' was ', home_win_percentage , '%'  )
+print('The win percentage of away teams in the year', yr,' was ', away_win_percentage , '%'  )
+print('The percentage of draws in the year', yr,' was ', draw_percentage , '%'  )
+    
+labels = 'Win Percentage of Home Team','Win Percentage of Away Team', 'Draw Percentage'
+sizes = [home_win_percentage, away_win_percentage, draw_percentage]
+fig1, ax1 = plt.subplots()
+ax1.pie(sizes, labels=labels, autopct='%1.2f%%'
+        , startangle=90)
+ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+plt.title('Plot 4: Win Percentages of Home/Away teams in given year')
+plt.show()
+
+#takin input from the user
+yr1=int(input('Enter a particular year '))
+team1=input('Enter a particular country/team name (please check the list of teams and enter a valid name) ')
+
+#getting data from that particular year
+yr1_df=footy_df[footy_df.year==yr1]
+
+
+#getting the winner outcomes for that particular year
+yr1_teamwin_df=yr1_df['winner_outcome']
+
+# keepin track of the count of wins 
+count_team1_win=0; 
+for i in range(1,len(yr1_teamwin_df)):
+ if yr1_teamwin_df.iloc[i]==team1:
+        count_team1_win+=1
+    
+
+#getting the loser outcomes for that particular year
+yr1_teamloss_df=yr1_df['loser_outcome']
+
+# keepin track of the count of losses 
+count_team1_loss=0; 
+for i in range(1,len(yr1_teamloss_df)):
+ if yr1_teamloss_df.iloc[i]==team1:
+        count_team1_loss+=1
+    
+
+#We now try to calculate the total games played by the team in that year
+yr1_teamgames1_df=yr1_df['home_team']
+yr1_teamgames2_df=yr1_df['away_team']
+
+# keepin track of the count of games played by the team 
+count_team1_games=0; 
+for i in range(1,len(yr1_teamgames1_df)):
+ if yr1_teamgames1_df.iloc[i]==team1:
+        count_team1_games+=1
+for i in range(1,len(yr1_teamgames2_df)):
+ if yr1_teamgames2_df.iloc[i]==team1:
+        count_team1_games+=1    
+
+        
+#calculating the ammount of games drawn 
+count_team1_draw = count_team1_games - (count_team1_win + count_team1_loss)
+
+#calculating the pecentage    
+team1_win_percentage=(count_team1_win/count_team1_games)*100
+team1_loss_percentage=(count_team1_loss/count_team1_games)*100
+team1_draw_percentage=(count_team1_draw/count_team1_games)*100
+
+#displaying output
+print('The win percentage of the team ', team1 ,' in the year ', yr1,' was ', team1_win_percentage , '%'  )
+print('The loss percentage of the team ', team1 ,' in the year ', yr1,' was ', team1_loss_percentage , '%'  )
+print('The percentage of draws of the team ', team1 ,'in the year ', yr1,' was ', team1_draw_percentage , '%'  )
+
+labels1 = 'Win Percentage of Given Team','Loss Percentage of Given Team', 'Draw Percentage of Given Team'
+sizes1 = [team1_win_percentage, team1_loss_percentage, team1_draw_percentage]
+fig1, ax1 = plt.subplots()
+ax1.pie(sizes1, labels=labels1, autopct='%1.2f%%'
+        , startangle=90)
+ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+plt.title('Plot 5: Win/Loss/Draw Percentages of the given team in that given year')
+plt.show()
+
+start_year=int(input('Enter a particular start year '))
+end_year=int(input('Enter a particular end year '))
+team2=input('Enter a particular country/team name (please check the list of teams and enter a valid name) ')
+year_len=end_year-start_year+1
+
+team2_win_prcnt=[0]*year_len #initializing variable to store the win percentatges
+for i in range(1,year_len+1):
+    team2_win_prcnt[i-1]=winning_percentage((start_year+i-1),team2)
+
+yrs=range(start_year,end_year+1)
+plt.plot(yrs, team2_win_prcnt, 'r--o', linewidth=4, markersize=12,);
+plt.title('Plot 6 : Win Percentages of given team during the given time period')
+plt.xlabel('Year'); plt.ylabel('Win Percentages of the given team');
