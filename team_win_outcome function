@@ -1,0 +1,7 @@
+def team_win_outcome(home_score, away_score):
+    if (home_score > away_score): 
+         team_outcome = 'H'
+    elif (home_score < away_score): 
+         team_outcome = 'A'
+    else: team_outcome = "D"
+    return(team_outcome)
