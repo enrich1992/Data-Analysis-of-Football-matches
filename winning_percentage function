@@ -1,0 +1,31 @@
+def winning_percentage(yr1,team1):
+    #getting data from that particular year
+    yr1_df=footy_df[footy_df.year==yr1]
+
+
+    #getting the winner outcomes for that particular year
+    yr1_teamwin_df=yr1_df['winner_outcome']
+
+    # keepin track of the count of wins 
+    count_team1_win=0; 
+    for i in range(1,len(yr1_teamwin_df)):
+     if yr1_teamwin_df.iloc[i]==team1:
+        count_team1_win+=1
+    
+    #We now try to calculate the total games played by the team in that year
+    yr1_teamgames1_df=yr1_df['home_team']
+    yr1_teamgames2_df=yr1_df['away_team']
+
+    # keepin track of the count of games played by the team 
+    count_team1_games=0; 
+    for i in range(1,len(yr1_teamgames1_df)):
+     if yr1_teamgames1_df.iloc[i]==team1:
+        count_team1_games+=1
+    for i in range(1,len(yr1_teamgames2_df)):
+     if yr1_teamgames2_df.iloc[i]==team1:
+        count_team1_games+=1    
+
+        
+    #calculating the pecentage    
+    team1_win_percentage=(count_team1_win/count_team1_games)*100
+    return(team1_win_percentage)
